@@ -161,4 +161,4 @@ cython_debug/
 
 results/
 dataset/
-*.pyc
+.vscode/
