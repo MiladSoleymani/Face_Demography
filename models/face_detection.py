@@ -170,7 +170,11 @@ class YOLOv8_face:
             confidences.tolist(),
             self.conf_threshold,
             self.iou_threshold,
-        ).flatten()
+        )
+
+        if isinstance(indices, np.ndarray):
+            indices = indices.flatten()
+
         if len(indices) > 0:
             mlvl_bboxes = bboxes_wh[indices]
             confidences = confidences[indices]

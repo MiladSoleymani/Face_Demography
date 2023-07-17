@@ -3,6 +3,10 @@ import math
 import cv2
 import numpy as np
 
+import supervision as sv
+from yolox.tracker.byte_tracker import STrack
+from onemetric.cv.utils.iou import box_iou_batch
+
 from typing import List
 
 
@@ -70,3 +74,52 @@ def convert_xywh_to_xyxy(bbox):
     x2 += expansion_amount_w
 
     return (x1, y1, x2, y2)
+
+
+def detections2boxes(detections: sv.Detections) -> np.ndarray:
+    return np.hstack((detections.xyxy, detections.confidence[:, np.newaxis]))
+
+
+# converts List[STrack] into format that can be consumed by match_detections_with_tracks function
+def tracks2boxes(tracks: List[STrack]) -> np.ndarray:
+    return np.array([track.tlbr for track in tracks], dtype=float)
+
+
+def match_detections_with_tracks(
+    detections: sv.Detections, tracks: List[STrack]
+) -> sv.Detections:
+    if not np.any(detections.xyxy) or len(tracks) == 0:
+        return np.empty((0,))
+
+    tracks_boxes = tracks2boxes(tracks=tracks)
+    iou = box_iou_batch(tracks_boxes, detections.xyxy)
+    track2detection = np.argmax(iou, axis=1)
+
+    tracker_ids = [None] * len(detections)
+    for tracker_index, detection_index in enumerate(track2detection):
+        if iou[tracker_index, detection_index] != 0:
+            tracker_ids[detection_index] = tracks[tracker_index].track_id
+
+    return tracker_ids
+
+
+def filter(detection, mask: np.ndarray):
+    """
+    Filter the detections by applying a mask
+
+    :param mask: np.ndarray : A mask of shape (n,) containing a boolean value for each detection indicating if it should be included in the filtered detections
+    :param inplace: bool : If True, the original data will be modified and self will be returned.
+    :return: Optional[np.ndarray] : A new instance of Detections with the filtered detections, if inplace is set to False. None otherwise.
+    """
+    detection.xyxy = detection.xyxy[mask]
+    detection.confidence = detection.confidence[mask]
+    detection.class_id = detection.class_id[mask]
+    detection.tracker_id = (
+        detection.tracker_id[mask] if detection.tracker_id is not None else None
+    )
+
+    return detection
+
+
+def extract_emotion_from_dict(emotions):
+    return list(sorted(emotions.items(), key=lambda x: x[1], reverse=True))[0][0]

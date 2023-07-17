@@ -12,10 +12,16 @@ from models.face_detection import YOLOv8_face
 
 from ultralytics import YOLO
 
+import shutil
 from fer import FER
 
 
 def run(conf: Dict) -> None:
+    # save_path
+    if os.path.exists(os.path.join(os.getcwd(), conf["save_path"])):
+        shutil.rmtree(os.path.join(os.getcwd(), conf["save_path"]))
+
+    os.makedirs(os.path.join(os.getcwd(), conf["save_path"]), exist_ok=True)
     conf["detector"] = FER()
     conf["face_model"] = YOLOv8_face()
 
@@ -37,7 +43,7 @@ def parse_args() -> None:
     parser.add_argument(
         "--source",
         type=int,
-        default=1,
+        default=3,
         choices=[0, 1, 2, 3],
         help="0 : image, 1 : a folder of images, 2 : video, 3 : live camera",
     )
