@@ -2,19 +2,22 @@ from typing import Dict
 import argparse
 import sys
 import os
+import cv2
 
 sys.path.append(os.getcwd())
 
 from utils.images import emotion_images, emotion_image
 from utils.videos import video, camera
+from models.face_detection import YOLOv8_face
 
+from ultralytics import YOLO
 
 from fer import FER
 
 
 def run(conf: Dict) -> None:
-
     conf["detector"] = FER()
+    conf["face_model"] = YOLOv8_face()
 
     if conf["source"] == 0:
         emotion_image(conf)
@@ -29,14 +32,13 @@ def run(conf: Dict) -> None:
 
 
 def parse_args() -> None:
-
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
         "--source",
         type=int,
-        default=0,
-        choices=[0,1,2,3],
+        default=1,
+        choices=[0, 1, 2, 3],
         help="0 : image, 1 : a folder of images, 2 : video, 3 : live camera",
     )
 
@@ -47,9 +49,16 @@ def parse_args() -> None:
     )
 
     parser.add_argument(
+        "--yolo_face",
+        type=str,
+        default="models/yolov8n-face.onnx",
+        help="setting yolo type that want to use",
+    )
+
+    parser.add_argument(
         "--save_path",
         type=str,
-        default="results/",
+        default="results",
         help="the path that you want to save results there",
     )
 
@@ -58,7 +67,6 @@ def parse_args() -> None:
 
 
 if __name__ == "__main__":
-
     opts = parse_args()
     conf = vars(opts)
     run(conf)

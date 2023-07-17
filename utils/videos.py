@@ -71,6 +71,8 @@ def video(conf: Dict) -> None:
         if not ret:
             break
 
+        
+
         objs = conf["detector"].detect_emotions(frame)
         modified_frame = postprocess(frame, objs)
 
